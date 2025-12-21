@@ -1,0 +1,88 @@
+CREATE TABLE Users (
+    userId INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    phone_number VARCHAR(20) UNIQUE,
+    password CHAR(60) NOT NULL COMMENT 'Store PHP password_hash result',
+    type_of_user ENUM('N', 'A') NOT NULL DEFAULT 'N' COMMENT 'N=Normal, A=Admin'
+);
+
+CREATE TABLE CustomerDetails (
+    userId INT PRIMARY KEY,
+    physical_address VARCHAR(255),
+    id_document_hash CHAR(128) COMMENT 'SHA-512 hash of the customer ID/License number',
+    next_of_kin_contact VARCHAR(20) NOT NULL,
+    FOREIGN KEY (userId) REFERENCES Users(userId) ON DELETE CASCADE
+);
+
+CREATE TABLE Manufacturers (
+    manId INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE CarModels (
+    modelId INT AUTO_INCREMENT PRIMARY KEY,
+    manufacturerId INT NOT NULL,
+    model_name VARCHAR(50) NOT NULL,
+    year YEAR NOT NULL,
+    FOREIGN KEY (manufacturerId) REFERENCES Manufacturers(manId) ON DELETE RESTRICT
+);
+
+CREATE TABLE CarTypes (
+    typeId INT AUTO_INCREMENT PRIMARY KEY,
+    type_name VARCHAR(50) UNIQUE NOT NULL,
+    description VARCHAR(255)
+);
+
+CREATE TABLE RentalRates (
+    rateId INT AUTO_INCREMENT PRIMARY KEY,
+    typeId INT NOT NULL,
+    daily_rate DECIMAL(8, 2) NOT NULL,
+    effective_date DATE NOT NULL,
+    FOREIGN KEY (typeId) REFERENCES CarTypes(typeId) ON DELETE RESTRICT
+);
+
+CREATE TABLE Cars (
+    VIN VARCHAR(17) PRIMARY KEY,
+    plate_number VARCHAR(15) UNIQUE NOT NULL,
+    manufacturerId INT NOT NULL,
+    modelId INT NOT NULL,
+    typeId INT NOT NULL,
+    colour VARCHAR(30),
+    num_seats INT NOT NULL,
+    tow_capacity_kg DECIMAL(6, 2) COMMENT 'NULL if not applicable',
+    is_available BOOLEAN NOT NULL DEFAULT TRUE,
+    FOREIGN KEY (manufacturerId) REFERENCES Manufacturers(manId) ON DELETE RESTRICT,
+    FOREIGN KEY (modelId) REFERENCES CarModels(modelId) ON DELETE RESTRICT,
+    FOREIGN KEY (typeId) REFERENCES CarTypes(typeId) ON DELETE RESTRICT
+);
+
+CREATE TABLE Rentals (
+    RentID INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    VIN VARCHAR(17) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    return_date DATE COMMENT 'Actual return date',
+    daily_rate_used DECIMAL(8, 2) NOT NULL COMMENT 'Rate at time of booking for historical accuracy',
+    expected_total_cost DECIMAL(10, 2) NOT NULL,
+    deposit_amount DECIMAL(10, 2) DEFAULT 0.00,
+    total_paid DECIMAL(10, 2) DEFAULT 0.00,
+    payment_method VARCHAR(50) COMMENT 'Cash, Speed Point, etc.',
+    rental_status ENUM('BOOKED', 'PICKED_UP', 'RETURNED', 'CANCELLED', 'COMPLETE') NOT NULL DEFAULT 'BOOKED',
+    
+    FOREIGN KEY (userId) REFERENCES Users(userId) ON DELETE RESTRICT,
+    FOREIGN KEY (VIN) REFERENCES Cars(VIN) ON DELETE RESTRICT,
+    
+    -- Constraint to prevent simultaneous rentals of the same car
+    UNIQUE KEY unique_rental_period (VIN, start_date, end_date)
+);
+
+CREATE TABLE CarImages (
+    imageId INT AUTO_INCREMENT PRIMARY KEY,
+    VIN VARCHAR(17) NOT NULL,
+    file_path VARCHAR(255) UNIQUE NOT NULL COMMENT 'Relative path to the image file on the server',
+    is_main_photo BOOLEAN NOT NULL DEFAULT FALSE,
+    caption VARCHAR(100),
+    FOREIGN KEY (VIN) REFERENCES Cars(VIN) ON DELETE CASCADE
+);
