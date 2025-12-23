@@ -46,7 +46,7 @@
         // Setters (Example of a core setter)
         public function setRentalRate(float $rate): void { $this->rental_rate = $rate; }
         public function setColor(string $color): void { $this->color = $color; }
-        }
+    }
 
     class Manufacturer {
         private int $manufacturer_id;
@@ -99,9 +99,9 @@
         $this->type_id = $type_id;
         $this->typeName = $typeName;
         $this->description = $description;
-        }
+    }
 
-    // Getters
+        // Getters
     public function getTypeId(): int { return $this->type_id; }
     public function getTypeName(): string { return $this->typeName; }
     public function getDescription(): ?string { return $this->description; }
@@ -112,7 +112,7 @@
     }
 
 
-    class User {
+   class User {
         private int $user_id;
         private string $email;
         private string $phone_number;
@@ -125,47 +125,47 @@
         $this->usertype = $usertype;
         }   
 
-    // Getters
-    public function getUserId(): int { return $this->user_id; }
-    public function getEmail(): string { return $this->email; }
-    public function getPhoneNumber(): string { return $this->phone_number; }
-    public function getUserType(): string { return $this->usertype; }
+        // Getters
+        public function getUserId(): int { return $this->user_id; }
+        public function getEmail(): string { return $this->email; }
+        public function getPhoneNumber(): string { return $this->phone_number; }
+        public function getUserType(): string { return $this->usertype; }
 
-    // Setters
-    public function setEmail(string $email): void { $this->email = $email; }
-    public function setPhoneNumber(string $phone_number): void { $this->phone_number = $phone_number; }
+        // Setters
+        public function setEmail(string $email): void { $this->email = $email; }
+        public function setPhoneNumber(string $phone_number): void { $this->phone_number = $phone_number; }
     }
 
-    class Customer {
+   class Customer {
     private User $user_details;
     private string $physical_address;
     private string $id_hash; // Your low-risk security compromise
     private string $next_of_kin_contact;
 
-    public function __construct(
+        public function __construct(
         User $user_details,
         string $physical_address,
         string $id_hash,
         string $next_of_kin_contact
-    ) {
-        $this->user_details = $user_details;
-        $this->physical_address = $physical_address;
-        $this->id_hash = $id_hash;
-        $this->next_of_kin_contact = $next_of_kin_contact;
+        ) {
+            $this->user_details = $user_details;
+            $this->physical_address = $physical_address;
+            $this->id_hash = $id_hash;
+            $this->next_of_kin_contact = $next_of_kin_contact;
+        }
+
+        // Getters
+        public function getUserDetails(): User { return $this->user_details; }
+        public function getPhysicalAddress(): string { return $this->physical_address; }
+        public function getIdHash(): string { return $this->id_hash; }
+        public function getNextOfKinContact(): string { return $this->next_of_kin_contact; }
+
+        // Setters
+        public function setPhysicalAddress(string $address): void { $this->physical_address = $address; }
+        public function setNextOfKinContact(string $contact): void { $this->next_of_kin_contact = $contact; }
     }
 
-    // Getters
-    public function getUserDetails(): User { return $this->user_details; }
-    public function getPhysicalAddress(): string { return $this->physical_address; }
-    public function getIdHash(): string { return $this->id_hash; }
-    public function getNextOfKinContact(): string { return $this->next_of_kin_contact; }
-
-    // Setters
-    public function setPhysicalAddress(string $address): void { $this->physical_address = $address; }
-    public function setNextOfKinContact(string $contact): void { $this->next_of_kin_contact = $contact; }
-}
-
-    class Rental {
+   class Rental {
     
     // --- Primary Key and Foreign Keys ---
     private int $rentID;           // Primary Key
@@ -241,5 +241,5 @@
     }
 
     // ... (All necessary public getter/setter methods)
-}
+    }
 ?>

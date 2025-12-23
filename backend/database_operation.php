@@ -1,8 +1,8 @@
 <?php 
+require_once "classes.php";
   class DBOperations{  
     private $connection;
-    public function __construct()
-    {
+    public function __construct(){
         $connection = $this->connect_to_db();
     }
     function connect_to_db(){
@@ -58,6 +58,7 @@
 
     //for the inserts, updates and deletes
     function execute_data_manipulation_query(string $sql_query, string $parameter_types='', array $parameters){
+        $operation_success = false;
         $prepared_statement = $this->connection->prepare($sql_query);
         if($prepared_statement == false){
             error_log("MYSQLi prepare staement failed".$this->connection->error);
@@ -73,11 +74,212 @@
             //error stuff
             error_log("MYSQLi query execute failed: ".$this->connection->error);
             }
+        else{
+            $operation_success = true;
+        }
             $prepared_statement->close();
+            return $operation_success;
     }
 
+    //car functions
     function add_car_to_database(Car $car){
-        $sql_query="INSERT INTO cars";
+        $sql_query="INSERT INTO cars(VIN, plate_number, manufacturerId, modelId, typeId, colour, num_seats, tow_capacity_kg, is_available) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $param_types =  "ssiisidi";
+        $params = [$car->getVIN(),
+            $car->getNumberPlate(),
+            $car->getManufacturer()->getManufacturerId(), 
+            $car->getModel()->getModelId(),
+            $car->getType()->getTypeId(),
+            $car->getColor(),
+            $car->getNumberOfSeats(),
+            $car->getTowCapacityKG(),
+            true ];
+        $operation_success = $this->execute_data_manipulation_query($sql_query, $param_types, $params);
+        if(!$operation_success){
+            echo "Car addition failed<br>";
+        }
+        else{
+            echo "Car added successfully<br>";
+        }
+    }
+    function remove_car_from_database(Car $car){
+        //since we can't remove this thing without losing customer records we'll just set it to unavailable without having a rental record
+        $sql_query = "UPDATE cars SET isavailable=0 WHERE VIN=? OR platenumber=?";
+        $param_types="ss";
+        $params=[$car->getVIN(), $car->getNumberPlate()];
+        $operation_success =$this->execute_data_manipulation_query($sql_query, $param_types, $params);
+        if(!$operation_success){
+            echo "Car removal failed<br>";
+        }
+        else{
+            echo "car removal successful<br>";
+        }
+    }
+    function update_car_details(Car $old_car_details, Car $new_car_details){
+        $sql_query="UPDATE cars 
+        SET VIN = ?, 
+        plate_number = ?,
+        manufacturerId = ?, 
+        modelId = ?, 
+        typeId = ?, 
+        colour = ?, 
+        num_seats = ?, 
+        tow_capacity_kg = ?, 
+        
+        WHERE VIN=? OR plate_number=?";
+        $param_types = "ssiisidss";
+        $params=[$new_car_details->getVIN(),
+            $new_car_details->getNumberPlate(),
+            $new_car_details->getManufacturer()->getManufacturerId(), 
+            $new_car_details->getModel()->getModelId(),
+            $new_car_details->getType()->getTypeId(),
+            $new_car_details->getColor(),
+            $new_car_details->getNumberOfSeats(),
+            $new_car_details->getTowCapacityKG(),
+            $old_car_details->getVIN(),
+            $old_car_details->getNumberPlate()];
+        $operation_success = $this->execute_data_manipulation_query($sql_query, $param_types, $params);
+        if(!$operation_success){
+            echo "Car update failed<br>";
+        }
+        else{
+            echo "Car updated successfully<br>";
+        }
+    }
+
+    function get_car(string $number_plate="", string $vin=""){
+
+    }
+
+    //model functions
+    function get_model(int $model_id): Model{
+        $sql_query = "SELECT * FROM CarModels WHERE modelID = ?";
+        $param_types="i";
+        $params = [$model_id];
+
+        $data = $this->execute_select_query($sql_query, $param_types, $params);
+        $manufacturer_id = $data[0]["manufacturerId"];
+        $model_name = $data[0]["model_name"];
+        $year = $data[0]["year"];
+        $model = new Model($model_id, $manufacturer_id, $year, $model_name);
+        return $model;
+    }
+
+    //manufacturer functions
+    function get_manufacturer(?int $manufacturer_id=null, ?string $manu_name=null):Manufacturer{
+        $sql_query = "SELECT * FROM Manufacturers ";
+        $params = [];
+        $param_types = "";
+        if(!empty($manu_name)){
+            $sql_query.="WHERE name=?";
+            $param_types.="s";
+            $params[] = $manu_name;
+        }
+        if(!empty($manufacturer_id)){
+            $sql_query.="WHERE manID = ?";
+            $param_types.= "i";
+            $params[]=$manufacturer_id;
+        }
+        $data = $this->execute_select_query($sql_query, $param_types, $params);
+        $manufacturer = new Manufacturer($data[0]["manId"], $data[0]["name"]);
+        return $manufacturer;
+    }
+
+    //car type functions
+    
+    //user functions
+
+    //function will return a boolean, true if the login was successfult, false otherwise
+    function login($username="", $email="", $phoneNumber="", $password):bool{
+        //only one will be used
+        $sql = "SELECT password FROM Users Where ";
+        $params = [];
+        $param_types = "s";
+        if(!empty($username)){
+            $sql.="username=?";
+            $params[] = $username;
+        }
+        if(!empty($email)){
+            $sql.="email=?";
+            $params[]=$email;
+        }
+        if(!empty($phoneNumber)){
+            $sql.="phoneNumber=?";
+            $params[] = $phoneNumber;
+        }
+        $data = $this->execute_select_query($sql, $param_types, $params);
+        $password_hashed =$data[0]["password"];
+        $login_status = password_verify($password, $password_hashed);
+        return $login_status;
+    }
+
+    function fetch_user_details(int $user_id, $username="", $email="", $phoneNumber=""):User{
+        $sql_query = "SELECT * FROM Users WHERE ";
+        $flag_set = false;
+        $param_types = "";
+        $params = [];
+        if(!empty($user_id)){
+            if($flag_set){
+                $sql_query.="AND userId=? ";
+            }
+            else{
+                $sql_query.="userId=? ";
+            }
+            $params[] = $user_id;
+            $param_types.="i";
+        }
+        if(!empty($username)){
+            if($flag_set){
+                $sql_query.="AND username=? ";
+            }
+            else{
+                $sql_query.="username=? ";
+            }
+            $params[] = $username;
+            $param_types.="s";
+
+        }
+        if(!empty($email)){
+            if($flag_set){
+                $sql_query.="AND email=? ";
+            }
+            else{
+                $sql_query.="email=? ";
+            }
+            $param_types.="s";
+            $params[] = $email;
+
+        }
+        if(!empty($phoneNumber)){
+            if($flag_set){
+                $sql_query.="AND phone_number=? ";
+            }
+            else{
+                $sql_query.="phone_number=? ";
+            }
+            $param_types.="s";
+            $params[] = $phoneNumber;
+        }
+        $data = $this->execute_select_query($sql_query, $param_types, $params);
+
+        $user = new User($data[0]["userId"], $data[0]["email"], $data[0]["phone_number"], $data[0]["type_of_user"]);
+        return $user;
+    }
+    //customer functions
+    function fetch_customer_details(?User $user_details=null, int $user_id=0, $username="", $email="", $phoneNumber=""): Customer{
+        if(empty($user_details)){
+            $user_details = $this->fetch_user_details($user_id, $username, $email, $phoneNumber);
+        }
+        $sql_query = "SELECT * FROM CustomerDetails WHERE userId=?";
+        $params = [$user_details->getUserID()];
+        $param_types = "i";
+        $data = $this->execute_select_query($sql_query, $param_types, $params);
+        $physical_address = $data[0]["physical_address"];
+        $persornal_id_hash = $data[0]["id_document_hash"];
+        $next_of_kin_contact = $data[0]["next_of_kin_contact"];
+        $customer = new Customer($user_details, $physical_address, $persornal_id_hash, $next_of_kin_contact);
+        return $customer;
+        
     }
 }
 ?>
