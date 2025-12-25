@@ -2,8 +2,19 @@
 require_once "classes.php";
   class DBOperations{  
     private $connection;
-    public function __construct(){
-        $connection = $this->connect_to_db();
+    private static ?DBOperations $instance = null;
+    public static function getInstance(): DBOperations{
+        if(self::$instance === null){
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+    private function __clone(){
+        throw new \Exception('Not implemented');
+    }
+    private function __construct(){
+        $this->connection = $this->connect_to_db();
+        
     }
     function connect_to_db(){
         $db_username="brid";
@@ -19,7 +30,9 @@ require_once "classes.php";
         
         return $connection;
     }
-
+    private function get_last_insert_id(){
+        return $this->connection->insert_id;
+    }
     function execute_select_query(string $sql_query, string $parameter_types='', array $parameters=[], $returnResultSetObject=false){
 
         $prepared_statement = $this->connection->prepare($sql_query);
@@ -57,7 +70,7 @@ require_once "classes.php";
     }
 
     //for the inserts, updates and deletes
-    function execute_data_manipulation_query(string $sql_query, string $parameter_types='', array $parameters){
+    function execute_data_manipulation_query(string $sql_query, string $parameter_types='', array $parameters=[]){
         $operation_success = false;
         $prepared_statement = $this->connection->prepare($sql_query);
         if($prepared_statement == false){
@@ -190,27 +203,28 @@ require_once "classes.php";
     //user functions
 
     //function will return a boolean, true if the login was successfult, false otherwise
-    function login($username="", $email="", $phoneNumber="", $password):bool{
+    function login($password, $username="", $email="", $phoneNumber=""){
         //only one will be used
-        $sql = "SELECT password FROM Users Where ";
+        $sql = "SELECT userId, password FROM Users Where ";
         $params = [];
         $param_types = "s";
         if(!empty($username)){
             $sql.="username=?";
-            $params[] = $username;
+            $params[0] = $username;
         }
         if(!empty($email)){
             $sql.="email=?";
-            $params[]=$email;
+            $params[0]=$email;
         }
         if(!empty($phoneNumber)){
             $sql.="phoneNumber=?";
-            $params[] = $phoneNumber;
+            $params[0] = $phoneNumber;
         }
         $data = $this->execute_select_query($sql, $param_types, $params);
         $password_hashed =$data[0]["password"];
+        $user_id = $data[0]["userId"];
         $login_status = password_verify($password, $password_hashed);
-        return $login_status;
+        return ["login_status" => $login_status, "user_id"=>$user_id];
     }
 
     function fetch_user_details(int $user_id, $username="", $email="", $phoneNumber=""):User{
@@ -265,6 +279,21 @@ require_once "classes.php";
         $user = new User($data[0]["userId"], $data[0]["email"], $data[0]["phone_number"], $data[0]["type_of_user"]);
         return $user;
     }
+
+    //returns associative array with a boolean flag for stating if a user was successfuly added to the db and the user id if it was added successfully
+    function create_user(User $user, string $username, string $password){
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $sql = "INSERT INTO Users(username, email, phone_number, password, type_of_user) VALUES (?, ?, ?, ?, ?)";
+        $param_types="sssss";
+        $params=[$username, $user->getEmail(), $user->getPhoneNumber(), $hashed_password, $user->getUserType()];
+        $operation_success = $this->execute_data_manipulation_query($sql, $param_types, $params);
+        if($operation_success){
+            return ["user_creation_success"=>$operation_success, "new_user_id"=>$this->get_last_insert_id()];
+        }
+        else{
+            return ["user_creation_success"=>$operation_success, "new_user_id"=>$this->get_last_insert_id()];
+        }
+    }
     //customer functions
     function fetch_customer_details(?User $user_details=null, int $user_id=0, $username="", $email="", $phoneNumber=""): Customer{
         if(empty($user_details)){
@@ -280,6 +309,10 @@ require_once "classes.php";
         $customer = new Customer($user_details, $physical_address, $persornal_id_hash, $next_of_kin_contact);
         return $customer;
         
+    }
+    
+    function update_customer_details(Customer $old_customer_details, Customer $new_customer_details){
+
     }
 }
 ?>

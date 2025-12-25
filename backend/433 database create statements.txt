@@ -3,7 +3,7 @@ CREATE TABLE Users (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE,
     phone_number VARCHAR(20) UNIQUE,
-    password CHAR(60) NOT NULL COMMENT 'Store PHP password_hash result',
+    password VARCHAR(255) NOT NULL COMMENT 'Store PHP password_hash result',
     type_of_user ENUM('N', 'A') NOT NULL DEFAULT 'N' COMMENT 'N=Normal, A=Admin'
 );
 
