@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration</title>
+</head>
+<body>
+    <form id="user_registration" action="../backend/user_registration.php" method="post">
+        <label for = "username">Username:</label><input type="text" name="username" required><br>
+        <label for = "email">Email:</label><input type="text" name="email" required><br>
+        <label for ="phone_number">Phone Number:</label><input type="text" name="phone_number" required><br>
+        <label for = "password">Password</label><input type="password" name = "password" required><br>
+        <label for = "password_confirmation">Confirm Password:</label><input type="password" name="password_confirmation" required><br>
+        <label for ="type_of_user">Type Of User:</label><select name="user_type" id="user_type" required>
+            <option value="" disable selected>---CHOOSE A USER TYPE---</option>
+            <option value="N">Customer</option>
+            <option value="A">Admin</option>
+        </select><br>
+        <input type="submit" name="submit" value="create new user">
+    </form>
+</body>
+</html>

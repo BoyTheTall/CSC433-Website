@@ -312,9 +312,43 @@ require_once "classes.php";
         return $customer;
         
     }
-    
-    function update_customer_details(Customer $old_customer_details, Customer $new_customer_details){
+    //run the create user function first in the calling function to get the user id needed here
+    function add_new_customer(Customer $new_customer){
+        $sql= "INSERT INTO Customer_Details(userId, physical_address, id_document_hash, next_of_kin_contact) VALUES(?, ?, ?, ?)";
+        $param_types = "isss";;
+        $params=[$new_customer->getUserDetails()->getUserId(), $new_customer->getPhysicalAddress(), $new_customer->getIdHash(), $new_customer->getNextOfKinContact()];
+        $operation_success = $this->execute_data_manipulation_query($sql, $param_types, $params);
+        return $operation_success;
+    }
 
+    //assumes that the user id wont change (they wont see it anyway)
+    function update_customer_details(Customer $new_customer_details,?string $username, ?string $new_password){
+        $sql="UPDATE Users(email, phone_number) VALUES(?, ?)";
+        $param_types="ss";
+        $params=[$new_customer_details->getUserDetails()->getEmail(), $new_customer_details->getUserDetails()->getPhoneNumber()];
+
+        if(isset($new_password) && isset($username)){
+            $sql = "UPDATE Users(username, email, phone_number, password) VALUES(?, ?, ?, ?)";
+            $param_types="ssss";
+            $params=[$username, $new_customer_details->getUserDetails()->getEmail(), $new_customer_details->getUserDetails()->getPhoneNumber(), password_hash($new_password, PASSWORD_DEFAULT)];
+        }
+        if(!isset($new_password) && isset($username)){
+            $sql = "UPDATE Users(username, email, phone_number) VALUES(?, ?, ?)";
+            $param_types="ssss";
+            $params=[$username, $new_customer_details->getUserDetails()->getEmail(), $new_customer_details->getUserDetails()->getPhoneNumber()];
+        }
+        if(isset($new_password) && !isset($username)){
+            $sql = "UPDATE Users(email, phone_number, password) VALUES(?, ?, ?)";
+            $param_types="sss";
+            $params=[$new_customer_details->getUserDetails()->getEmail(), $new_customer_details->getUserDetails()->getPhoneNumber(), password_hash($new_password, PASSWORD_DEFAULT)];
+        }
+
+        $sql.= " WHERE userId=?";
+        $param_types.="i";
+        $params[]=$new_customer_details->getUserDetails()->getUserId();
+
+        $operation_success = $this->execute_data_manipulation_query($sql, $param_types, $params);
+        return $operation_success;        
     }
 }
 ?>
