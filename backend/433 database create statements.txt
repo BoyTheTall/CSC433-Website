@@ -25,6 +25,8 @@ CREATE TABLE CarModels (
     manufacturerId INT NOT NULL,
     model_name VARCHAR(50) NOT NULL,
     year YEAR NOT NULL,
+    num_seats INT NOT NULL,
+    tow_capacity_kg DECIMAL(6, 2) COMMENT 'NULL if not applicable',
     FOREIGN KEY (manufacturerId) REFERENCES Manufacturers(manId) ON DELETE RESTRICT
 );
 
@@ -49,8 +51,6 @@ CREATE TABLE Cars (
     modelId INT NOT NULL,
     typeId INT NOT NULL,
     colour VARCHAR(30),
-    num_seats INT NOT NULL,
-    tow_capacity_kg DECIMAL(6, 2) COMMENT 'NULL if not applicable',
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
     FOREIGN KEY (manufacturerId) REFERENCES Manufacturers(manId) ON DELETE RESTRICT,
     FOREIGN KEY (modelId) REFERENCES CarModels(modelId) ON DELETE RESTRICT,

@@ -6,8 +6,6 @@
         private Model $model;
         private CarType $type;
         private string $color;
-        private int $number_of_seats;
-        private ?float $tow_capacityKG;
         private float $rental_rate;
 
         public function __construct(
@@ -17,8 +15,6 @@
             Model $model,               // Expecting an object
             CarType $type,             // Expecting an object
             string $color,
-            int $number_of_seats,
-            ?float $tow_capacityKG,
             float $rental_rate
             ) {
                 $this->number_plate = $number_plate;
@@ -27,8 +23,7 @@
                 $this->model = $model;
                 $this->type = $type;
                 $this->color = $color;
-                $this->number_of_seats = $number_of_seats;
-                $this->tow_capacityKG = $tow_capacityKG;
+                
                 $this->rental_rate = $rental_rate;
             }
 
@@ -39,8 +34,6 @@
         public function getModel(): Model { return $this->model; }
         public function getType(): CarType { return $this->type; }
         public function getColor(): string { return $this->color; }
-        public function getNumberOfSeats(): int { return $this->number_of_seats; }
-        public function getTowCapacityKG(): ?float { return $this->tow_capacityKG; }
         public function getRentalRate(): float { return $this->rental_rate; }
 
         // Setters (Example of a core setter)
@@ -71,12 +64,17 @@
         private int $manufacturer_id;
         private int $year;
         private string $name;
+        private int $number_of_seats;
+        private ?float $tow_capacityKG;
 
-        public function __construct(int $model_id, int $manufacturer_id, int $year, string $name) {
+        public function __construct(int $model_id, int $manufacturer_id, int $year, string $name,int $number_of_seats,
+            ?float $tow_capacityKG) {
             $this->model_id = $model_id;
             $this->manufacturer_id = $manufacturer_id;
             $this->year = $year;
             $this->name = $name;
+            $this->number_of_seats = $number_of_seats;
+            $this->tow_capacityKG = $tow_capacityKG;
         }
 
         // Getters
@@ -84,7 +82,8 @@
         public function getManufacturerId(): int { return $this->manufacturer_id; }
         public function getYear(): int { return $this->year; }
         public function getName(): string { return $this->name; }
-
+        public function getNumberOfSeats(): int { return $this->number_of_seats; }
+        public function getTowCapacityKG(): ?float { return $this->tow_capacityKG; }
         // Setters
         public function setName(string $name): void { $this->name = $name; }
         public function setYear(int $year): void { $this->year = $year; }

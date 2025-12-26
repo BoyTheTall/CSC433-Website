@@ -104,8 +104,8 @@ require_once "classes.php";
             $car->getModel()->getModelId(),
             $car->getType()->getTypeId(),
             $car->getColor(),
-            $car->getNumberOfSeats(),
-            $car->getTowCapacityKG(),
+            $car->getModel()->getNumberOfSeats(),
+            $car->getModel()->getTowCapacityKG(),
             true ];
         $operation_success = $this->execute_data_manipulation_query($sql_query, $param_types, $params);
         if(!$operation_success){
@@ -147,8 +147,8 @@ require_once "classes.php";
             $new_car_details->getModel()->getModelId(),
             $new_car_details->getType()->getTypeId(),
             $new_car_details->getColor(),
-            $new_car_details->getNumberOfSeats(),
-            $new_car_details->getTowCapacityKG(),
+            $new_car_details->getModel()->getNumberOfSeats(),
+            $new_car_details->getModel()->getTowCapacityKG(),
             $old_car_details->getVIN(),
             $old_car_details->getNumberPlate()];
         $operation_success = $this->execute_data_manipulation_query($sql_query, $param_types, $params);
@@ -161,7 +161,7 @@ require_once "classes.php";
     }
 
     function get_car(string $number_plate="", string $vin=""){
-
+        $sql = "SELECT ";
     }
 
     //model functions
@@ -174,7 +174,9 @@ require_once "classes.php";
         $manufacturer_id = $data[0]["manufacturerId"];
         $model_name = $data[0]["model_name"];
         $year = $data[0]["year"];
-        $model = new Model($model_id, $manufacturer_id, $year, $model_name);
+        $number_of_seats=$data[0]["num_seats"];
+        $tow_capacicty = $data[0]["tow_capacity_kg"];
+        $model = new Model($model_id, $manufacturer_id, $year, $model_name, $number_of_seats, $tow_capacicty);
         return $model;
     }
 
@@ -279,7 +281,7 @@ require_once "classes.php";
         $user = new User($data[0]["userId"], $data[0]["email"], $data[0]["phone_number"], $data[0]["type_of_user"]);
         return $user;
     }
-
+    
     //returns associative array with a boolean flag for stating if a user was successfuly added to the db and the user id if it was added successfully
     function create_user(User $user, string $username, string $password){
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
