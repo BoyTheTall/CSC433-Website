@@ -74,7 +74,7 @@ require_once "classes.php";
         $operation_success = false;
         $prepared_statement = $this->connection->prepare($sql_query);
         if($prepared_statement == false){
-            error_log("MYSQLi prepare staement failed".$this->connection->error);
+            error_log("MYSQLi prepare statement failed".$this->connection->error);
         }
         
         if(!empty($parameters) && !empty($parameter_types)){
@@ -161,8 +161,61 @@ require_once "classes.php";
     }
 
     function get_car(string $number_plate="", string $vin=""){
-        $sql = "SELECT ";
+        $sql = "SELECT Cars.VIN, Cars.plate_number, Cars.manufacturerId AS car_man_id, Cars.modelId As Car_model_id, Cars.typeId AS car_type_id, Cars.colour, Cars.is_available, CarTypes.type_name, CarTypes.description as car_type_description, CarModels.model_name, CarModels.year, CarModels.num_seats, CarModels.tow_capacity_kg, manufacturers.name as manufacturer_name, RentalRates.daily_rate, RentalRates.effective_date 
+        FROM Cars 
+        INNER JOIN CarModels ON Cars.modelId=CarModels.modelId
+        INNER JOIN Manufacturers ON Cars.manufacturerId=Manufacturers.manID
+        INNER JOIN CarTypes ON Cars.typeID=CarTypes.typeID
+        INNER JOIN RentalRates ON Cars.typeID=RentalRates.typeID ";
+        $param_types="";
+        $params = [];
+        $flag_set = false;
+        if(isset($number_plate)){
+            $sql.="WHERE Cars.plate_number = ?";
+            $param_types.="s";
+            $params[] = $number_plate;
+        }
+        if(isset($vin)){
+            if($flag_set){
+                $sql.=" AND Cars.VIN=?";
+            }
+            else{
+                $sql.=" WHERE Cars.VIN=?";
+            }
+            $param_types.= "s";
+            $params[] = $vin;            
+        }
+        $data = $this->execute_select_query($sql, $param_types, $params);
+        //Model
+        $model_id = $data[0]["Car_model_Id"];
+        $manufacturer_id = $data[0]["car_man_id"];
+        $year = $data[0]["year"];
+        $model_name = $data[0]["model_name"];
+        $number_of_seats = $data["num_seats"];
+        $tow_capacicty = $data[0]["tow_capacity_kg"];
+
+        $model = new Model($model_id, $manufacturer_id, $year, $model_name, $number_of_seats, $tow_capacicty);
+
+        //manufacturer
+        $manufacturer_name = $data[0]["manufacturer_name"];
+        $manufacturer = new Manufacturer($manufacturer_id, $manufacturer_name);
+
+        //Car Type
+        $type_id = $data[0]["car_type_id"];
+        $type_name = $data[0]["type_name"];
+        $type_description = $data[0]["car_type_description"];
+        $car_type = new Cartype($type_id, $type_name, $type_description);
+
+        //car info
+        $number_plate = $data[0]["plate_number"];
+        $VIN = $data[0]["VIN"];
+        $colour = $data[0]["colour"];
+        $rental_rate = $data[0]["daily_rate"];
+
+        $car = new Car($number_plate, $VIN, $manufacturer, $model, $car_type, $colour, $rental_rate);
+        return ["operation_success"=> true, "car" => $car];
     }
+
 
     //model functions
     function get_model(int $model_id): Model{
