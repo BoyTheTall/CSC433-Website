@@ -38,10 +38,10 @@ CREATE TABLE CarTypes (
 
 CREATE TABLE RentalRates (
     rateId INT AUTO_INCREMENT PRIMARY KEY,
-    typeId INT NOT NULL,
+    modelID INT NOT NULL,
     daily_rate DECIMAL(8, 2) NOT NULL,
     effective_date DATE NOT NULL,
-    FOREIGN KEY (typeId) REFERENCES CarTypes(typeId) ON DELETE RESTRICT
+    FOREIGN KEY (modelId) REFERENCES CarModels(modelId) ON DELETE RESTRICT
 );
 
 CREATE TABLE Cars (
