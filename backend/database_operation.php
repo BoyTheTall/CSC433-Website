@@ -166,7 +166,7 @@ require_once "classes.php";
         INNER JOIN CarModels ON Cars.modelId=CarModels.modelId
         INNER JOIN Manufacturers ON Cars.manufacturerId=Manufacturers.manID
         INNER JOIN CarTypes ON Cars.typeID=CarTypes.typeID
-        INNER JOIN RentalRates ON Cars.typeID=RentalRates.typeID ";
+        INNER JOIN RentalRates ON Cars.modelId=RentalRates.modelId ";
         $param_types="";
         $params = [];
         $flag_set = false;
@@ -191,7 +191,7 @@ require_once "classes.php";
         $manufacturer_id = $data[0]["car_man_id"];
         $year = $data[0]["year"];
         $model_name = $data[0]["model_name"];
-        $number_of_seats = $data["num_seats"];
+        $number_of_seats = $data[0]["num_seats"];
         $tow_capacicty = $data[0]["tow_capacity_kg"];
 
         $model = new Model($model_id, $manufacturer_id, $year, $model_name, $number_of_seats, $tow_capacicty);
@@ -216,8 +216,101 @@ require_once "classes.php";
         return ["operation_success"=> true, "car" => $car];
     }
 
-    //will return an array of cars.
-    function search(){}
+    //will return an array of cars. it'll assume that it will get the IDs since we'll AJAX this shit
+    function search(?int $manufacturer_id=null, ?int $type_id=null, ?int $model_id=null, string $colour, ?bool $is_available= null){
+        $sql = "SELECT Cars.VIN, Cars.plate_number, Cars.manufacturerId AS car_man_id, Cars.modelId As Car_model_id, Cars.typeId AS car_type_id, Cars.colour, Cars.is_available, CarTypes.type_name, CarTypes.description as car_type_description, CarModels.model_name, CarModels.year, CarModels.num_seats, CarModels.tow_capacity_kg, manufacturers.name as manufacturer_name, RentalRates.daily_rate, RentalRates.effective_date 
+        FROM Cars 
+        INNER JOIN CarModels ON Cars.modelId=CarModels.modelId
+        INNER JOIN Manufacturers ON Cars.manufacturerId=Manufacturers.manID
+        INNER JOIN CarTypes ON Cars.typeID=CarTypes.typeID
+        INNER JOIN RentalRates ON Cars.modelId=RentalRates.modelId ";
+
+        $params = [];
+        $param_types = "";
+        $flag_set = false;
+        if(isset($manufacturer_id)){
+            $flag_set = true;
+            $sql.= "WHERE Cars.manufacturerId = ? ";
+            $params[] = $manufacturer_id;
+            $param_types.="i";
+        }
+        if(isset($type_id)){
+            if($flag_set==true){
+                $sql.= "AND WHERE Cars.typeId=? ";
+            }
+            else{
+                $sql.= "WHERE Cars.typeId=? ";
+            }
+            $param_types.="i";
+            $params[]= $type_id;
+        }
+        if(isset($model_id)){
+            if($flag_set){
+                $sql.="AND Cars.ModelId=? ";
+            }
+            else{
+                $sql.="WHERE Cars.ModelId=? ";
+            }
+            $param_types.="i";
+            $params[]=$model_id;
+        }
+        if(isset($colour)){
+            if($flag_set){
+                $sql.="AND Cars.colour=? ";
+            }
+            else{
+                $sql.="WHERE Cars.colour=? ";
+            }
+            $param_types.="s";
+            $params[]=$colour;
+        }
+        if(isset($is_available)){
+            if($flag_set){
+                $sql.="AND Cars.is_available=? ";
+            }
+            else{
+                $sql.="WHERE Cars.is_available=? ";
+            }
+            $param_types.="i";
+            $params[]=$is_available;
+        }
+
+        $data = $this->execute_select_query($sql, $param_types, $params);
+        $array_length = count($data);
+        $cars = [];
+        for ($i = 0; $i < $array_length; $i++){
+            //Model
+            $model_id = $data[$i]["Car_model_Id"];
+            $manufacturer_id = $data[$i]["car_man_id"];
+            $year = $data[$i]["year"];
+            $model_name = $data[$i]["model_name"];
+            $number_of_seats = $data[$i]["num_seats"];
+            $tow_capacicty = $data[$i]["tow_capacity_kg"];
+
+            $model = new Model($model_id, $manufacturer_id, $year, $model_name, $number_of_seats, $tow_capacicty);
+
+            //manufacturer
+            $manufacturer_name = $data[$i]["manufacturer_name"];
+            $manufacturer = new Manufacturer($manufacturer_id, $manufacturer_name);
+
+            //Car Type
+            $type_id = $data[$i]["car_type_id"];
+            $type_name = $data[$i]["type_name"];
+            $type_description = $data[$i]["car_type_description"];
+            $car_type = new Cartype($type_id, $type_name, $type_description);
+
+            //car info
+            $number_plate = $data[$i]["plate_number"];
+            $VIN = $data[$i]["VIN"];
+            $colour = $data[$i]["colour"];
+            $rental_rate = $data[$i]["daily_rate"];
+
+            $car = new Car($number_plate, $VIN, $manufacturer, $model, $car_type, $colour, $rental_rate);
+            $cars[] = $car;
+        }
+
+        return ["operation_success"=> true, "cars" => $cars];
+    }
 
     //will return the stuff we need to put in the search boxes
     function getSearchParameters(){}
