@@ -216,7 +216,11 @@ require_once "classes.php";
         return ["operation_success"=> true, "car" => $car];
     }
 
+    //will return an array of cars.
+    function search(){}
 
+    //will return the stuff we need to put in the search boxes
+    function getSearchParameters(){}
     //model functions
     function get_model(int $model_id): Model{
         $sql_query = "SELECT * FROM CarModels WHERE modelID = ?";
