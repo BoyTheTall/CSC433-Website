@@ -217,7 +217,7 @@ require_once "classes.php";
     }
 
     //will return an array of cars. it'll assume that it will get the IDs since we'll AJAX this shit
-    function search(?int $manufacturer_id=null, ?int $type_id=null, ?int $model_id=null, string $colour, ?bool $is_available= null){
+    function search(?int $manufacturer_id=null, ?int $type_id=null, ?int $model_id=null, ?string $colour=null, ?bool $is_available= null, ?int $year=null, ?int $number_of_seats=null){
         $sql = "SELECT Cars.VIN, Cars.plate_number, Cars.manufacturerId AS car_man_id, Cars.modelId As Car_model_id, Cars.typeId AS car_type_id, Cars.colour, Cars.is_available, CarTypes.type_name, CarTypes.description as car_type_description, CarModels.model_name, CarModels.year, CarModels.num_seats, CarModels.tow_capacity_kg, manufacturers.name as manufacturer_name, RentalRates.daily_rate, RentalRates.effective_date 
         FROM Cars 
         INNER JOIN CarModels ON Cars.modelId=CarModels.modelId
@@ -275,6 +275,27 @@ require_once "classes.php";
             $params[]=$is_available;
         }
 
+        if(isset($year)){
+            if($flag_set){
+                $sql.="AND CarModel.year=? ";
+            }
+            else{
+                $sql.="WHERE CarModel.year=? ";
+            }
+            $param_types.="i";
+            $params[]=$year;
+        }
+        if(isset($number_of_seats)){
+            if($flag_set){
+                $sql.="AND CarModel.num_seats=? ";
+            }
+            else{
+                $sql.="WHERE CarModel.num_seats=? ";
+            }
+            $param_types.="i";
+            $params[]=$number_of_seats;
+        }
+
         $data = $this->execute_select_query($sql, $param_types, $params);
         $array_length = count($data);
         $cars = [];
@@ -313,7 +334,61 @@ require_once "classes.php";
     }
 
     //will return the stuff we need to put in the search boxes
-    function getSearchParameters(){}
+    function getSearchParameters(){
+        //getting the manufactures
+        $sql_query = "SELECT * FROM manufacturers";
+
+        $data = $this->execute_select_query($sql_query);
+        $arr_len = count($data);
+        $manufacturers=[];//we'll return as aprt of an assiative array
+        for($i=0; $i<$arr_len; $i++){
+            $manufacturers[]= new Manufacturer($data[$i]["manId"], $data[$i]["name"]);
+        }
+
+        //getting the models
+        $sql_query = "SELECT * FROM CarModels";
+        $data = $this->execute_select_query($sql_query);
+        $arr_len = count($data);
+        $models = [];
+        for($i=0; $i<$arr_len; $i++){
+            $models[] = new Model($data[$i]["modelId"], $data[$i]["manufacturerId"], $data[$i]["year"], $data[$i]["model_name"], $data[$i]["num_seats"], $data[$i]["tow_capacity_kg"]);
+        }
+
+        //getting the years
+        $sql_query = "SELECT DISTINCT(year) AS vehicle_year FROM CarModels";
+        $data = $this->execute_select_query($sql_query);
+        $years = [];
+        for($i=0; $i<count($data); $i++){
+            $years[] = $data[$i]["vehicle_year"];
+        }
+
+        //getting colours
+        $sql_query = "SELECT DISTINCT(colour) AS vehicle_colour FROM Cars";
+        $data = $this->execute_select_query($sql_query);
+        $colours = [];
+        for($i=0; $i<count($data); $i++){
+            $colours[] = $data[$i]["vehicle_colour"];
+        }
+
+        //getting vehicle types
+         $sql_query = "SELECT * FROM CarTypes";
+        $data = $this->execute_select_query($sql_query);
+        $car_types = [];
+        for($i=0; $i<count($data); $i++){
+            $car_types[] = new CarType($data[$i]["typeId"], $data[$i]["type_name"], null);
+        }
+
+        //number of seats
+        $sql_query = "SELECT DISTINCT(num_seats) AS num_of_seats FROM CarModels";
+        $data = $this->execute_select_query($sql_query);
+        $num_seats = [];
+        for($i=0; $i<count($data); $i++){
+            $num_seats[] = $data[$i]["num_of_seats"];
+        }
+
+        $available_search_parameters = ["manufacturers"=> $manufacturers, "car_models"=> $models, "years"=>$years, "colours"=>$colours, "vehicle_types"=>$car_types, "number_of_seats"=>$num_seats];
+        return $available_search_parameters;
+    }
     //model functions
     function get_model(int $model_id): Model{
         $sql_query = "SELECT * FROM CarModels WHERE modelID = ?";
