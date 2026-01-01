@@ -1,5 +1,5 @@
 <?php 
-    class Car {
+    class Car implements JsonSerializable{
         private string $number_plate;
         private string $VIN;
         private Manufacturer $manufacturer;
@@ -39,6 +39,14 @@
         // Setters (Example of a core setter)
         public function setRentalRate(float $rate): void { $this->rental_rate = $rate; }
         public function setColor(string $color): void { $this->color = $color; }
+
+        public function jsonSerialize(): mixed
+        {
+            return ['number_plate'=> $this->number_plate,
+                    'VIN'=> $this->VIN,
+                    'colour'=>$this->color,
+                    'rental_rate'=>$this->rental_rate];
+        }
     }
 
     class Manufacturer {

@@ -16,12 +16,13 @@ DB_NAME = "Mizoragi_Car_Rental_DB"
 # Initialize Faker
 fake = Faker()
 
-# Global maps for ID lookups
+# Global maps for ID lookups and data storage
 MANUFACTURERS_MAP = {}
 CAR_TYPES_MAP = {}
-CAR_MODELS_LIST = [] # List of dicts (for Car generation)
+CAR_MODELS_LIST = [] # List of dicts (for Car and Rate generation)
 USER_IDS = []
 VINS = [] # Store VINs for Rentals table
+MODEL_RATES = {} # NEW: To store {modelId: daily_rate} for use in Rentals table generation
 
 # =======================================================
 #                   HELPER FUNCTIONS
@@ -39,7 +40,6 @@ def get_db_connection():
         return conn
     except mysql.connector.Error as err:
         print(f"Database Connection Failed: {err}")
-        # In a real environment, you'd handle this more gracefully
         exit(1)
 
 def execute_query(conn, sql, params=None):
@@ -48,7 +48,6 @@ def execute_query(conn, sql, params=None):
     try:
         cursor.execute(sql, params or ())
         conn.commit()
-        # Return the last inserted ID
         return cursor.lastrowid if 'INSERT' in sql.upper() else True
     except mysql.connector.Error as err:
         print(f"MySQL Error: {err} | Query: {sql} | Params: {params}")
@@ -62,7 +61,6 @@ def generate_id_hash(data):
 
 def generate_vin():
     """Generates a random VIN (17 alphanumeric)"""
-    # Ensures compliance with standard VIN format
     return fake.bothify(text='?#?????##########', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ').upper()
 
 # =======================================================
@@ -88,6 +86,12 @@ car_types_data = ['Sedan', 'SUV', 'Pickup Truck', 'Hatchback', 'Van', 'Coupe', '
 colors = ['White', 'Black', 'Silver', 'Red', 'Blue', 'Grey', 'Green']
 rental_payment_methods = ['Cash', 'Speed Point', 'EFT', 'Mobile Pay']
 
+# Rate Modifiers (for new model-specific rates)
+RATE_MODIFIERS = {
+    'Sedan': 50.00, 'SUV': 75.00, 'Pickup Truck': 90.00, 'Hatchback': 45.00, 
+    'Van': 80.00, 'Coupe': 60.00, 'Electric': 70.00
+}
+
 # 1. Manufacturers
 print("1. Populating Manufacturers...")
 sql = "INSERT INTO Manufacturers (name) VALUES (%s)"
@@ -107,7 +111,7 @@ for type_name in car_types_data:
         CAR_TYPES_MAP[type_name] = last_id
 
 
-# 3. CarModels (Updated to include num_seats and tow_capacity_kg)
+# 3. CarModels
 print("3. Populating CarModels...")
 sql = "INSERT INTO CarModels (manufacturerId, model_name, year, num_seats, tow_capacity_kg) VALUES (%s, %s, %s, %s, %s)"
 
@@ -115,7 +119,7 @@ for year in range(2018, 2025):
     for man_name, models in car_models_by_manufacturer.items():
         man_id = MANUFACTURERS_MAP[man_name]
         for model_name, type_name in models:
-            if random.random() < 0.3: continue # Generate a slightly larger subset
+            if random.random() < 0.3: continue 
             
             # Determine characteristics based on type
             num_seats = random.choice([4, 5])
@@ -133,25 +137,38 @@ for year in range(2018, 2025):
                     'modelId': last_id,
                     'manufacturerId': man_id,
                     'model_name': model_name,
-                    'type_name': type_name, # Stored type_name to link in Cars table
+                    'type_name': type_name, 
+                    'typeId': CAR_TYPES_MAP[type_name], # Store typeId for Car table generation
                     'num_seats': num_seats,
                     'tow_capacity_kg': tow_capacity
                 })
 print(f"   Generated {len(CAR_MODELS_LIST)} distinct car models.")
 
 
-# 4. RentalRates (Fixed to only use typeId as FK)
-print("4. Populating RentalRates...")
-sql = "INSERT INTO RentalRates (typeId, daily_rate, effective_date) VALUES (%s, %s, %s)"
-rates = {
-    'Sedan': 50.00, 'SUV': 75.00, 'Pickup Truck': 90.00, 'Hatchback': 45.00, 
-    'Van': 80.00, 'Coupe': 60.00, 'Electric': 70.00
-}
+# 4. RentalRates (NEW: Linked to ModelId)
+print("4. Populating RentalRates (by Model)...")
+sql = "INSERT INTO RentalRates (modelID, daily_rate, effective_date) VALUES (%s, %s, %s)"
+
 today = date.today().isoformat()
-for type_name, rate in rates.items():
-    type_id = CAR_TYPES_MAP[type_name]
-    # Ensure rate is passed as float/Decimal for MySQL
-    execute_query(conn, sql, (type_id, Decimal(str(rate)), today)) 
+for model in CAR_MODELS_LIST:
+    # Get base rate for the car's type
+    base_rate = Decimal(str(RATE_MODIFIERS[model['type_name']]))
+    
+    # Add small random variation based on year (newer cars are slightly more expensive)
+    random_adjustment = Decimal(str(random.uniform(-5.00, 10.00)))
+    final_rate = base_rate + random_adjustment
+    
+    # Ensure rate is positive and rounded
+    final_rate = round(max(Decimal('30.00'), final_rate), 2) 
+
+    execute_query(conn, sql, (
+        model['modelId'], 
+        float(final_rate), # Pass as float/Decimal for MySQL
+        today
+    ))
+    
+    # Store rate for quick lookup in Rentals generation
+    MODEL_RATES[model['modelId']] = final_rate 
 
 
 # 5. Users and CustomerDetails (70 Records: 50 Normal, 2 Admin, 18 Others)
@@ -163,6 +180,7 @@ for i in range(70):
     username = fake.unique.user_name() + str(i)
     email = fake.unique.email()
     phone_number = fake.unique.numerify(text='555########')
+    # Using SHA256 as a placeholder for a proper password hash function (PHP password_hash)
     hashed_password = hashlib.sha256(f"password{i}".encode('utf-8')).hexdigest()
     user_type = 'A' if i < 2 else 'N'
     
@@ -174,18 +192,14 @@ for i in range(70):
         # Only create CustomerDetails for Normal users
         if user_type == 'N':
             address = fake.address().replace('\n', ', ')
-            # Use a unique identifier to seed the hash
             id_hash = generate_id_hash(fake.ssn())
             kin_contact = fake.numerify(text='555########')
             
             execute_query(conn, customer_sql, (user_id, address, id_hash, kin_contact))
 
 
-# 6. Cars (100 Records - Fixed to match schema)
+# 6. Cars (100 Records)
 print("6. Populating 100 Cars...")
-# Note: num_seats and tow_capacity_kg are now handled by CarModels table in DDL, 
-# but are still present in your previous Python script. If your DB schema changed, 
-# you'd need to confirm. For now, matching the DDL you provided earlier.
 cars_sql = "INSERT INTO Cars (VIN, plate_number, manufacturerId, modelId, typeId, colour, is_available) VALUES (%s, %s, %s, %s, %s, %s, %s)"
 car_images_sql = "INSERT INTO CarImages (VIN, file_path, is_main_photo, caption) VALUES (%s, %s, %s, %s)"
 
@@ -198,7 +212,7 @@ for i in range(100):
     model_data = random.choice(CAR_MODELS_LIST)
     man_id = model_data['manufacturerId']
     model_id = model_data['modelId']
-    type_id = CAR_TYPES_MAP[model_data['type_name']]
+    type_id = model_data['typeId'] # Fetched from the data stored in step 3
 
     color = random.choice(colors)
     is_available = random.choice([True] * 8 + [False] * 2)
@@ -215,32 +229,25 @@ for i in range(100):
         execute_query(conn, car_images_sql, (vin, file_path, is_main, caption))
 
 
-# 7. Rentals (100 Records - Fixed all Decimal/Float issues)
+# 7. Rentals (100 Records - NEW Rate Lookup)
 print("7. Populating 100 Rentals...")
 rental_sql = "INSERT INTO Rentals (userId, VIN, start_date, end_date, return_date, daily_rate_used, expected_total_cost, deposit_amount, total_paid, payment_method, rental_status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
-# Fetch rates from DB to ensure Decimal consistency
-rates_data = {}
+# Map VIN to ModelId for rate lookup
+vin_to_modelid = {}
 cursor = conn.cursor()
-cursor.execute("SELECT rr.daily_rate, rr.typeId FROM RentalRates rr")
-for rate, type_id in cursor.fetchall():
-    rates_data[type_id] = rate # mysql.connector returns Decimal if column is DECIMAL
-cursor.close()
-
-# Map VIN to TypeId
-vin_to_typeid = {}
-cursor = conn.cursor()
-cursor.execute("SELECT VIN, typeId FROM Cars")
-for vin, type_id in cursor.fetchall():
-    vin_to_typeid[vin] = type_id
+cursor.execute("SELECT VIN, modelId FROM Cars")
+for vin, model_id in cursor.fetchall():
+    vin_to_modelid[vin] = model_id
 cursor.close()
 
 for i in range(100):
     user_id = random.choice(USER_IDS)
     vin = random.choice(VINS)
     
-    car_type_id = vin_to_typeid.get(vin)
-    daily_rate = rates_data.get(car_type_id, Decimal('50.00')) 
+    car_model_id = vin_to_modelid.get(vin)
+    # Get rate from the MODEL_RATES map, based on ModelId
+    daily_rate = MODEL_RATES.get(car_model_id, Decimal('50.00')) 
     
     # Dates
     start_date_obj = fake.date_object() + timedelta(days=random.randint(-30, 90))
@@ -251,7 +258,7 @@ for i in range(100):
     end_date = end_date_obj.isoformat()
     
     # Status and Payments
-    status = random.choice(['BOOKED'] * 3 + ['PICKED_UP'] * 2 + ['RETURNED'] * 4 + ['CANCELLED'] * 1)
+    status = random.choice(['BOOKED'] * 3 + ['PICKED_UP'] * 2 + ['RETURNED'] * 4 + ['CANCELLED'] * 1 + ['COMPLETE'] * 1)
     
     # Calculation using Decimal
     expected_total_cost = daily_rate * Decimal(rental_days)
@@ -262,7 +269,7 @@ for i in range(100):
     return_date = None
     payment_method = None
     
-    if status == 'RETURNED':
+    if status in ['RETURNED', 'COMPLETE']:
         total_paid = expected_total_cost + deposit_amount
         payment_method = random.choice(rental_payment_methods)
         return_date_obj = end_date_obj + timedelta(days=random.randint(-2, 3))
@@ -271,7 +278,7 @@ for i in range(100):
         total_paid = expected_total_cost + deposit_amount
         payment_method = random.choice(rental_payment_methods)
     elif status == 'BOOKED':
-        total_paid = Decimal('50.00') if random.random() < 0.7 else Decimal('0.00') # Paid small booking fee
+        total_paid = Decimal('50.00') if random.random() < 0.7 else Decimal('0.00') 
         payment_method = 'EFT' if total_paid > 0 else None
 
     # MySQL expects None for NULL, and float/Decimal for DECIMAL types

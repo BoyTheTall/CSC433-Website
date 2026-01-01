@@ -217,7 +217,7 @@ require_once "classes.php";
     }
 
     //will return an array of cars. it'll assume that it will get the IDs since we'll AJAX this shit
-    function search(?int $manufacturer_id=null, ?int $type_id=null, ?int $model_id=null, ?string $colour=null, ?bool $is_available= null, ?int $year=null, ?int $number_of_seats=null){
+    function search(?string $manufacturer_id=null, ?string $type_id=null, ?string $model_id=null, ?string $colour=null, ?bool $is_available= null, ?string $year=null, ?string $number_of_seats=null, ?string $tow_capacity=null){
         $sql = "SELECT Cars.VIN, Cars.plate_number, Cars.manufacturerId AS car_man_id, Cars.modelId As Car_model_id, Cars.typeId AS car_type_id, Cars.colour, Cars.is_available, CarTypes.type_name, CarTypes.description as car_type_description, CarModels.model_name, CarModels.year, CarModels.num_seats, CarModels.tow_capacity_kg, manufacturers.name as manufacturer_name, RentalRates.daily_rate, RentalRates.effective_date 
         FROM Cars 
         INNER JOIN CarModels ON Cars.modelId=CarModels.modelId
@@ -236,7 +236,7 @@ require_once "classes.php";
         }
         if(isset($type_id)){
             if($flag_set==true){
-                $sql.= "AND WHERE Cars.typeId=? ";
+                $sql.= "AND Cars.typeId=? ";
             }
             else{
                 $sql.= "WHERE Cars.typeId=? ";
@@ -277,25 +277,34 @@ require_once "classes.php";
 
         if(isset($year)){
             if($flag_set){
-                $sql.="AND CarModel.year=? ";
+                $sql.="AND CarModels.year=? ";
             }
             else{
-                $sql.="WHERE CarModel.year=? ";
+                $sql.="WHERE CarModels.year=? ";
             }
             $param_types.="i";
             $params[]=$year;
         }
         if(isset($number_of_seats)){
             if($flag_set){
-                $sql.="AND CarModel.num_seats=? ";
+                $sql.="AND CarModels.num_seats=? ";
             }
             else{
-                $sql.="WHERE CarModel.num_seats=? ";
+                $sql.="WHERE CarModels.num_seats=? ";
             }
             $param_types.="i";
             $params[]=$number_of_seats;
         }
-
+        if(isset($tow_capacity)){
+            if($flag_set){
+                $sql.="AND CarModels.tow_capacity_kg=? ";
+            }
+            else{
+                $sql.="WHERE CarModels.tow_capacity_kg=? ";
+            }
+            $param_types.="d";
+            $params[]=$tow_capacity;
+        }
         $data = $this->execute_select_query($sql, $param_types, $params);
         $array_length = count($data);
         $cars = [];
