@@ -1,0 +1,129 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;  
+    margin: 0;
+    background-color: #f4f4f4;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    width: 400px;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+    padding: 20px;
+    color: #fff;
+}
+
+.header h2 {
+    margin: 0;
+    text-align: center;
+}
+
+form {
+    padding: 20px 40px;
+}
+
+.form-control {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    position: relative;
+}
+
+.form-control label {
+    display: inline-block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-control input,
+.form-control select {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 2px solid #d8d1d1;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-control input:focus,
+.form-control select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-control.success input,
+.form-control.success select {
+    border: 2px solid rgb(26, 167, 26);
+}
+
+.form-control.error input,
+.form-control.error select {
+    border: 2px solid rgb(228, 29, 22);
+}
+
+.form-control small {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    margin: 3px 0;
+    visibility: hidden;
+    color: rgb(228, 29, 22);
+    font-size: 12px;
+}
+
+.form-control.error small {
+    visibility: visible;
+}
+
+button {
+    background-color: rgb(4, 4, 95);
+    color: #fff;
+    padding: 12px 20px;
+    width: 100%;
+    border-radius: 4px;
+    border: 2px solid rgb(4, 4, 95);
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: rgb(6, 6, 120);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+
+.alert {
+    padding: 12px;
+    margin: 20px 40px 0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.alert.error {
+    background-color: #ffe6e6;
+    color: rgb(228, 29, 22);
+    border: 1px solid rgb(228, 29, 22);
+}
+
+.alert.success {
+    background-color: #e6f7e6;
+    color: rgb(26, 167, 26);
+    border: 1px solid rgb(26, 167, 26);
+}
