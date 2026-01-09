@@ -433,7 +433,14 @@ require_once "classes.php";
         $manufacturer = new Manufacturer($data[0]["manId"], $data[0]["name"]);
         return $manufacturer;
     }
+    function getVehicleVIN(string $number_plate){
+        $sql = "SELECT VIN from Cars WHERE Number_Plate=?";
+        $param_types="s";
+        $params = [$number_plate];
 
+        $data = $this->execute_select_query($sql, $param_types, $params);
+        return $data[0]["VIN"];
+    }
     //car type functions
     
     //user functions
@@ -548,11 +555,11 @@ require_once "classes.php";
     }
     //run the create user function first in the calling function to get the user id needed here
     function add_new_customer(Customer $new_customer){
-        $sql= "INSERT INTO Customer_Details(userId, physical_address, id_document_hash, next_of_kin_contact) VALUES(?, ?, ?, ?)";
+        $sql= "INSERT INTO CustomerDetails(userId, physical_address, id_document_hash, next_of_kin_contact) VALUES(?, ?, ?, ?)";
         $param_types = "isss";;
         $params=[$new_customer->getUserDetails()->getUserId(), $new_customer->getPhysicalAddress(), $new_customer->getIdHash(), $new_customer->getNextOfKinContact()];
         $operation_success = $this->execute_data_manipulation_query($sql, $param_types, $params);
-        return $operation_success;
+        return ["operation_success"=>$operation_success,"new_user_id"=> $this->get_last_insert_id()];
     }
 
     //assumes that the user id wont change (they wont see it anyway)
@@ -583,6 +590,15 @@ require_once "classes.php";
 
         $operation_success = $this->execute_data_manipulation_query($sql, $param_types, $params);
         return $operation_success;        
+    }
+
+    function rent_car($user_id, $VIN, $start_date, $end_date, $daily_rate_used, $expected_total, $payment_method="Cash"){
+        $sql = "INSERT INTO Rentals(userId, VIN, start_date, end_date, daily_rate_used, expected_total_cost, payment_method) VALUES(?,?,?,?,?,?,?)";
+        $params = [$user_id, $VIN, $start_date, $end_date, $daily_rate_used, $expected_total, $payment_method];
+        $param_types = "isssdds";
+
+        $operation_success = $this->execute_data_manipulation_query($sql, $param_types, $params);
+        return $operation_success;
     }
 }
 ?>

@@ -1,4 +1,5 @@
 <?php 
+    session_start(); 
     require_once "config.php";
     $db_conn = DBOperations::getInstance();
 
@@ -17,7 +18,8 @@
     $next_of_kin_contact = validate_phone_number($_POST["next_of_kin_contact"]);
     
     if ($password == $password_confirmation){
-        $operation_results = $db_conn->create_user($user, $username, $password);
+        // NOTE: Corrected $user to $new_user based on variable definition above
+        $operation_results = $db_conn->create_user($new_user, $username, $password);
         if($operation_results["user_creation_success"]){
             echo "user created successfully<br>";
             $new_user_id = $operation_results["new_user_id"];
@@ -25,6 +27,18 @@
             $new_customer = new Customer($new_user, $physical_address, $hashed_id, $next_of_kin_contact);
             $customer_creation_success = $db_conn->add_new_customer($new_customer);
 
+           
+            $_SESSION["user_id"] = $new_user_id;
+            $_SESSION["username"] = $username;
+            
+            // Set client-side cookies for JavaScript access (30 days)
+            setcookie("user_id", $new_user_id, time() + (86400 * 30), "/");
+            setcookie("username", $username, time() + (86400 * 30), "/");
+            
+            // Redirect to the main search page
+            $main_page_url = "../vehicle_search_page.php"; // <--- REDIRECT TARGET
+            header('Location: ' . $main_page_url);
+            exit;
             
         }
         else{

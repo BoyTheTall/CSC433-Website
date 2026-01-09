@@ -1,3 +1,22 @@
+<?php
+session_start(); // Start the session to ensure cookie functionality
+
+// 🟢 NEW: Check for the user_id cookie
+if (!isset($_COOKIE['user_id'])) {
+    // If the cookie is not set, alert the user and redirect to the login page
+    // We use JavaScript for the alert/redirect to ensure the user sees the message.
+    echo "<script>alert('You need to be logged in to update your details.'); window.location.href = './frontend/login.html';</script>";
+    exit;
+}
+
+// 🟢 Store the user ID from the cookie if it exists
+$user_id = $_COOKIE['user_id'];
+
+// NOTE: You can now use $user_id to fetch the customer's existing data 
+// and pre-fill the form fields below if needed.
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,9 +28,12 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2>Customer Registration</h2>
+            <h2>Customer Details Update</h2>
         </div>
-        <form id="customer_registration" action="../backend/customer_registration.php" method="post">
+        <form id="customer_registration" action="./backend/customer_update.php" method="post">
+            
+            <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($user_id); ?>">
+
             <div class="form-control">
                 <label for="username">Username:</label>
                 <input type="text" name="username" id="txtUserName" required>
@@ -61,7 +83,7 @@
             </div>
             
             <div class="form-control">
-                <button type="submit">Register</button>
+                <button type="submit">Update Your Details</Details></button>
             </div>
         </form>
     </div>
