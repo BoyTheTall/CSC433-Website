@@ -218,7 +218,7 @@ require_once "classes.php";
 
     //will return an array of cars. it'll assume that it will get the IDs since we'll AJAX this shit
     function search(?string $manufacturer_id=null, ?string $type_id=null, ?string $model_id=null, ?string $colour=null, ?bool $is_available= null, ?string $year=null, ?string $number_of_seats=null, ?string $tow_capacity=null){
-        $sql = "SELECT Cars.VIN, Cars.plate_number, Cars.manufacturerId AS car_man_id, Cars.modelId As Car_model_id, Cars.typeId AS car_type_id, Cars.colour, Cars.is_available, CarTypes.type_name, CarTypes.description as car_type_description, CarModels.model_name, CarModels.year, CarModels.num_seats, CarModels.tow_capacity_kg, manufacturers.name as manufacturer_name, RentalRates.daily_rate, RentalRates.effective_date 
+        $sql = "SELECT Cars.VIN, Cars.plate_number, Cars.manufacturerId AS car_man_id, Cars.modelId As Car_model_id, Cars.typeId AS car_type_id, Cars.colour, Cars.is_available, CarTypes.type_name, CarTypes.description as car_type_description, CarModels.model_name, CarModels.year, CarModels.num_seats, CarModels.tow_capacity_kg, manufacturers.name as manufacturer_name, RentalRates.daily_rate, RentalRates.effective_date, carmodels.primary_image_url AS car_image 
         FROM Cars 
         INNER JOIN CarModels ON Cars.modelId=CarModels.modelId
         INNER JOIN Manufacturers ON Cars.manufacturerId=Manufacturers.manID
@@ -228,13 +228,13 @@ require_once "classes.php";
         $params = [];
         $param_types = "";
         $flag_set = false;
-        if(isset($manufacturer_id)){
+        if(!empty($manufacturer_id)){
             $flag_set = true;
             $sql.= "WHERE Cars.manufacturerId = ? ";
             $params[] = $manufacturer_id;
             $param_types.="i";
         }
-        if(isset($type_id)){
+        if(!empty($type_id)){
             if($flag_set==true){
                 $sql.= "AND Cars.typeId=? ";
             }
@@ -244,7 +244,7 @@ require_once "classes.php";
             $param_types.="i";
             $params[]= $type_id;
         }
-        if(isset($model_id)){
+        if(!empty($model_id)){
             if($flag_set){
                 $sql.="AND Cars.ModelId=? ";
             }
@@ -254,7 +254,7 @@ require_once "classes.php";
             $param_types.="i";
             $params[]=$model_id;
         }
-        if(isset($colour)){
+        if(!empty($colour)){
             if($flag_set){
                 $sql.="AND Cars.colour=? ";
             }
@@ -264,7 +264,7 @@ require_once "classes.php";
             $param_types.="s";
             $params[]=$colour;
         }
-        if(isset($is_available)){
+        if(!empty($is_available)){
             if($flag_set){
                 $sql.="AND Cars.is_available=? ";
             }
@@ -275,7 +275,7 @@ require_once "classes.php";
             $params[]=$is_available;
         }
 
-        if(isset($year)){
+        if(!empty($year)){
             if($flag_set){
                 $sql.="AND CarModels.year=? ";
             }
@@ -285,7 +285,7 @@ require_once "classes.php";
             $param_types.="i";
             $params[]=$year;
         }
-        if(isset($number_of_seats)){
+        if(!empty($number_of_seats)){
             if($flag_set){
                 $sql.="AND CarModels.num_seats=? ";
             }
@@ -295,7 +295,7 @@ require_once "classes.php";
             $param_types.="i";
             $params[]=$number_of_seats;
         }
-        if(isset($tow_capacity)){
+        if(!empty($tow_capacity)){
             if($flag_set){
                 $sql.="AND CarModels.tow_capacity_kg=? ";
             }
@@ -310,14 +310,14 @@ require_once "classes.php";
         $cars = [];
         for ($i = 0; $i < $array_length; $i++){
             //Model
-            $model_id = $data[$i]["Car_model_Id"];
+            $model_id = $data[$i]["Car_model_id"];
             $manufacturer_id = $data[$i]["car_man_id"];
             $year = $data[$i]["year"];
             $model_name = $data[$i]["model_name"];
             $number_of_seats = $data[$i]["num_seats"];
             $tow_capacicty = $data[$i]["tow_capacity_kg"];
-
-            $model = new Model($model_id, $manufacturer_id, $year, $model_name, $number_of_seats, $tow_capacicty);
+            $img_dir = $data[$i]["car_image"];
+            $model = new Model($model_id, $manufacturer_id, $year, $model_name, $number_of_seats, $tow_capacicty, $img_dir);
 
             //manufacturer
             $manufacturer_name = $data[$i]["manufacturer_name"];

@@ -45,11 +45,14 @@
             return ['number_plate'=> $this->number_plate,
                     'VIN'=> $this->VIN,
                     'colour'=>$this->color,
-                    'rental_rate'=>$this->rental_rate];
+                    'rental_rate'=>$this->rental_rate,
+                    'manufacturer'=> $this->manufacturer,
+                    'model'=> $this->model,
+                    'car_type'=>$this->type];
         }
     }
 
-    class Manufacturer {
+    class Manufacturer implements JsonSerializable{
         private int $manufacturer_id;
         private string $name;
 
@@ -64,25 +67,35 @@
 
         // Setters (less common for ID/Name, but included for completeness)
         public function setName(string $name): void { $this->name = $name; }
+
+        public function jsonSerialize(): mixed
+        {
+            return [
+                'manufacturer_id'=>$this->manufacturer_id,
+                'manufacturer_name'=> $this->name
+            ];
+        }
     }
 
     //car model
-    class Model {
+    class Model implements JsonSerializable{
         private int $model_id;
         private int $manufacturer_id;
         private int $year;
         private string $name;
         private int $number_of_seats;
         private ?float $tow_capacityKG;
+        private ?string $model_img_dir;
 
         public function __construct(int $model_id, int $manufacturer_id, int $year, string $name,int $number_of_seats,
-            ?float $tow_capacityKG) {
+            ?float $tow_capacityKG, ?string $model_img=null) {
             $this->model_id = $model_id;
             $this->manufacturer_id = $manufacturer_id;
             $this->year = $year;
             $this->name = $name;
             $this->number_of_seats = $number_of_seats;
             $this->tow_capacityKG = $tow_capacityKG;
+            $this->model_img_dir = $model_img;
         }
 
         // Getters
@@ -95,12 +108,26 @@
         // Setters
         public function setName(string $name): void { $this->name = $name; }
         public function setYear(int $year): void { $this->year = $year; }
+
+        public function jsonSerialize(): mixed
+        {
+            return [
+                'model_id'=>$this->model_id,
+                'maunfacturer_id'=>$this->manufacturer_id,
+                'year'=>$this->year,
+                'model_name'=>$this->name,
+                'num_of_seats'=>$this->number_of_seats,
+                'tow_capacity'=>$this->tow_capacityKG,
+                'image_url'=>$this->model_img_dir
+
+            ];
+        }
     }
 
-   class CarType {
+   class CarType implements JsonSerializable{
     private int $type_id;
     private string $typeName;
-    private ?string $description;
+    private ?string $description=null;
 
     public function __construct(int $type_id, string $typeName, ?string $description) {
         $this->type_id = $type_id;
@@ -116,6 +143,17 @@
     // Setters
     public function setTypeName(string $typeName): void { $this->typeName = $typeName; }
     public function setDescription(?string $description): void { $this->description = $description; }
+
+    public function jsonSerialize(): mixed{
+        $data_array = [
+            'type_id'=>$this->type_id,
+            'type_name'=>$this->typeName            
+        ];
+        if($this->description !== null){
+            $data_array['description'] = $this->description;
+        }
+        return $data_array;
+        }
     }
 
 
@@ -172,7 +210,7 @@
         public function setNextOfKinContact(string $contact): void { $this->next_of_kin_contact = $contact; }
     }
 
-   class Rental {
+   class Rental implements JsonSerializable{
     
     // --- Primary Key and Foreign Keys ---
     private int $rentID;           // Primary Key
@@ -248,5 +286,33 @@
     }
 
     // ... (All necessary public getter/setter methods)
+    public function jsonSerialize(): mixed
+    {
+        $data = [
+            'rentID' => $this->rentID,
+            'userId' => $this->userId,
+            'VIN' => $this->VIN,
+
+            // Handle DateTime objects by formatting them to a standard string (ISO 8601)
+            'startDate' => $this->startDate->format(DateTime::ATOM),
+            'endDate' => $this->endDate->format(DateTime::ATOM),
+            
+            // Financial Data (often formatted to 2 decimal places in serialization)
+            'dailyRateUsed' => number_format($this->dailyRateUsed, 2, '.', ''),
+            'expectedTotalCost' => number_format($this->expectedTotalCost, 2, '.', ''),
+            'depositAmount' => number_format($this->depositAmount, 2, '.', ''),
+            'totalPaid' => number_format($this->totalPaid, 2, '.', ''),
+            'paymentMethod' => $this->paymentMethod,
+            'rentalStatus' => $this->rentalStatus,
+        ];
+
+        // 💡 Key Step: Handle the Nullable returnDate
+        // We only include 'returnDate' in the JSON if it is NOT null.
+        if ($this->returnDate !== null) {
+            $data['returnDate'] = $this->returnDate->format(DateTime::ATOM);
+        }
+
+        return $data;
+    }
     }
 ?>

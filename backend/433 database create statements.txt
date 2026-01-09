@@ -77,12 +77,3 @@ CREATE TABLE Rentals (
     -- Constraint to prevent simultaneous rentals of the same car
     UNIQUE KEY unique_rental_period (VIN, start_date, end_date)
 );
-
-CREATE TABLE CarImages (
-    imageId INT AUTO_INCREMENT PRIMARY KEY,
-    VIN VARCHAR(17) NOT NULL,
-    file_path VARCHAR(255) UNIQUE NOT NULL COMMENT 'Relative path to the image file on the server',
-    is_main_photo BOOLEAN NOT NULL DEFAULT FALSE,
-    caption VARCHAR(100),
-    FOREIGN KEY (VIN) REFERENCES Cars(VIN) ON DELETE CASCADE
-);
