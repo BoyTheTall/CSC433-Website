@@ -1,7 +1,9 @@
+let CURRENT_CAR_LIST=[];
+
 function displayResults(carList){
     const results_container = document.getElementById('search_results');
     results_container.innerHTML = '';
-
+    
     if(carList.length == 0){
         results_container.innerHTML = "<p>sorry we could not find a list of cars matching that criteria :(</p>";
         return;
@@ -22,6 +24,82 @@ function displayResults(carList){
         results_container.insertAdjacentHTML('beforeend', cardHTML)
     });
 }
+function displayCarDetails(car_details){
+    const carDeatilsContainer=document.getElementById("detailed_car_view");
+    carDeatilsContainer.innerHTML="";
+    const car_details_card = `<div id="car_details_modal" class="modal">
+    <div class="modal-content">
+        
+        <span class="close-button">&times;</span>
+        
+        <header class="modal-header">
+            <h2 id="modal_title">
+                [DETAILS.MANUFACTURER_NAME] [DETAILS.MODEL_NAME]
+            </h2>
+            <p class="model-year" id="modal_year">[DETAILS.YEAR]</p>
+        </header>
+
+        <section class="modal-body">
+            
+            <div class="modal-image-container">
+                <img id="modal_image" 
+                     src="media/obama.png" 
+                     alt="Car Image"
+                     class="car-detail-image"
+                     width="200" height="200">
+            </div>
+
+            <div class="modal-specs">
+                <h3>Key Specifications</h3>
+                
+                <ul>
+                    <li>
+                        <strong>Type:</strong> 
+                        <span id="modal_type">[DETAILS.CAR_TYPE_NAME]</span>
+                    </li>
+                    <li>
+                        <strong>Seats:</strong> 
+                        <span id="modal_seats">[DETAILS.NUM_SEATS]</span>
+                    </li>
+                    <li>
+                        <strong>Colour:</strong> 
+                        <span id="modal_colour">[DETAILS.COLOUR]</span>
+                    </li>
+                    <li>
+                        <strong>Tow Capacity:</strong> 
+                        <span id="modal_tow_capacity">[DETAILS.TOW_CAPACITY_KG]</span> kg
+                    </li>
+                </ul>
+
+                <hr>
+
+                <div class="modal-pricing">
+                    <p class="rate-large">
+                        **Rental Rate:** <span id="modal_rate">E[DETAILS.DAILY_RATE]</span> / day
+                    </p>
+                </div>
+                
+                <form id="booking_form">
+                    <input type="hidden" id="booking_car_id" value="[DETAILS.NUMBER_PLATE]">
+                    
+                    <label for="rental_start">Start Date:</label>
+                    <input type="date" id="rental_start" required>
+                    
+                    <label for="rental_end">End Date:</label>
+                    <input type="date" id="rental_end" required>
+                    
+                    <button type="submit" id="book_now_button">Book Now</button>
+                    <p id="total_cost_display" class="total-cost">Total Cost: E0.00</p>
+                </form>
+
+            </div>
+        </section>
+        
+    </div>
+        </div>`;
+
+    carDeatilsContainer.insertAdjacentHTML('beforeend', car_details_card);
+}
 
 document.getElementById('vehicle_search').addEventListener('submit', function(event){
     //stopping the full page relaod
@@ -37,7 +115,8 @@ document.getElementById('vehicle_search').addEventListener('submit', function(ev
             throw new Error('Network response not okay');
         }
         return response.json();
-    }).then(data => {displayResults(data)}).catch(error =>{
+    }).then(data => {displayResults(data); CURRENT_CAR_LIST=data;
+        console.log("Global List Populated. Total cars:", CURRENT_CAR_LIST.length);}).catch(error =>{
 
         console.error("results fetching failed:", error);
 
@@ -66,34 +145,20 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('User clicked to view details for Car ID:', carId);
             
             // This is the function we discussed earlier:
-            fetchCarDetails(carId); 
+            displayCarDetails(getCarDetails(carId)); 
             
-            // Optionally, you might visually highlight the selected card here.
+            //details
+           
         }
     });
 });
 
 //we need to edit this
-function fetchCarDetails(carId) {
-    // 3. Make the AJAX Request (GET method again for retrieval)
-    fetch(`api/get_car_details.php?id=${carId}`, {
-        method: 'GET' 
-    })
-    .then(response => response.json())
-    .then(details => {
-        // 4. Update the Details Section
-        const detailsSection = document.getElementById('details-section');
-        
-        detailsSection.innerHTML = `
-            <h2>${details.make} ${details.model}</h2>
-            <p>Full Description: ${details.description}</p>
-            <form id="booking-form">...</form>
-        `;
-
-        // Show the details section (assuming it was hidden)
-        detailsSection.style.display = 'block'; 
-        // Hide the search/results section if needed
-        document.getElementById('results-container').style.display = 'none';
-    })
-    .catch(error => console.error('Error fetching details:', error));
+function getCarDetails(carId) {
+    const car_details = CURRENT_CAR_LIST.find(car => String(car.number_plate).trim()==String(carId).trim());
+    if (!car_details) {
+        console.warn(`Attempted to find car ID ${carId}, but it was not found in the current list.`);
+    }
+    
+    return car_details;
 }

@@ -92,6 +92,11 @@
     <div id="search_results" name="search_results">
 
     </div>
+    <label for="detailed_car_view">Book Car</label>
+    <div id="detailed_car_view" name = "detailed_car_view">
+
+    
+    </div>
     <script src="search_results_gen.js"></script>
 </body>
 </html>

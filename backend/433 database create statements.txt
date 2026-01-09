@@ -27,6 +27,7 @@ CREATE TABLE CarModels (
     year YEAR NOT NULL,
     num_seats INT NOT NULL,
     tow_capacity_kg DECIMAL(6, 2) COMMENT 'NULL if not applicable',
+    primary_image_url VARCHAR(255),
     FOREIGN KEY (manufacturerId) REFERENCES Manufacturers(manId) ON DELETE RESTRICT
 );
 

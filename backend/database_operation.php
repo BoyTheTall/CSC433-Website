@@ -161,7 +161,7 @@ require_once "classes.php";
     }
 
     function get_car(string $number_plate="", string $vin=""){
-        $sql = "SELECT Cars.VIN, Cars.plate_number, Cars.manufacturerId AS car_man_id, Cars.modelId As Car_model_id, Cars.typeId AS car_type_id, Cars.colour, Cars.is_available, CarTypes.type_name, CarTypes.description as car_type_description, CarModels.model_name, CarModels.year, CarModels.num_seats, CarModels.tow_capacity_kg, manufacturers.name as manufacturer_name, RentalRates.daily_rate, RentalRates.effective_date 
+        $sql = "SELECT Cars.VIN, Cars.plate_number, Cars.manufacturerId AS car_man_id, Cars.modelId As Car_model_id, Cars.typeId AS car_type_id, Cars.colour, Cars.is_available, CarTypes.type_name, CarTypes.description as car_type_description, CarModels.model_name, CarModels.year, CarModels.num_seats, CarModels.tow_capacity_kg, manufacturers.name as manufacturer_name, RentalRates.daily_rate, RentalRates.effective_date, CarModels.primary_image_url AS car_image 
         FROM Cars 
         INNER JOIN CarModels ON Cars.modelId=CarModels.modelId
         INNER JOIN Manufacturers ON Cars.manufacturerId=Manufacturers.manID
@@ -170,12 +170,12 @@ require_once "classes.php";
         $param_types="";
         $params = [];
         $flag_set = false;
-        if(isset($number_plate)){
+        if(!empty($number_plate)){
             $sql.="WHERE Cars.plate_number = ?";
             $param_types.="s";
             $params[] = $number_plate;
         }
-        if(isset($vin)){
+        if(!empty($vin)){
             if($flag_set){
                 $sql.=" AND Cars.VIN=?";
             }
@@ -193,8 +193,8 @@ require_once "classes.php";
         $model_name = $data[0]["model_name"];
         $number_of_seats = $data[0]["num_seats"];
         $tow_capacicty = $data[0]["tow_capacity_kg"];
-
-        $model = new Model($model_id, $manufacturer_id, $year, $model_name, $number_of_seats, $tow_capacicty);
+        $car_image = $data[0]["car_image"];
+        $model = new Model($model_id, $manufacturer_id, $year, $model_name, $number_of_seats, $tow_capacicty, $car_image);
 
         //manufacturer
         $manufacturer_name = $data[0]["manufacturer_name"];
@@ -561,17 +561,17 @@ require_once "classes.php";
         $param_types="ss";
         $params=[$new_customer_details->getUserDetails()->getEmail(), $new_customer_details->getUserDetails()->getPhoneNumber()];
 
-        if(isset($new_password) && isset($username)){
+        if(!empty($new_password) && !empty($username)){
             $sql = "UPDATE Users(username, email, phone_number, password) VALUES(?, ?, ?, ?)";
             $param_types="ssss";
             $params=[$username, $new_customer_details->getUserDetails()->getEmail(), $new_customer_details->getUserDetails()->getPhoneNumber(), password_hash($new_password, PASSWORD_DEFAULT)];
         }
-        if(!isset($new_password) && isset($username)){
+        if(empty($new_password) && !empty($username)){
             $sql = "UPDATE Users(username, email, phone_number) VALUES(?, ?, ?)";
             $param_types="ssss";
             $params=[$username, $new_customer_details->getUserDetails()->getEmail(), $new_customer_details->getUserDetails()->getPhoneNumber()];
         }
-        if(isset($new_password) && !isset($username)){
+        if(!empty($new_password) && empty($username)){
             $sql = "UPDATE Users(email, phone_number, password) VALUES(?, ?, ?)";
             $param_types="sss";
             $params=[$new_customer_details->getUserDetails()->getEmail(), $new_customer_details->getUserDetails()->getPhoneNumber(), password_hash($new_password, PASSWORD_DEFAULT)];

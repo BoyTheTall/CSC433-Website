@@ -113,7 +113,11 @@ for type_name in car_types_data:
 
 # 3. CarModels
 print("3. Populating CarModels...")
-sql = "INSERT INTO CarModels (manufacturerId, model_name, year, num_seats, tow_capacity_kg) VALUES (%s, %s, %s, %s, %s)"
+sql = "INSERT INTO CarModels (manufacturerId, model_name, year, num_seats, tow_capacity_kg, primary_image_url) VALUES (%s, %s, %s, %s, %s, %s)"
+
+# Define the image URL to insert
+# NOTE: It is best practice to include the file extension.
+IMAGE_URL = 'media/obama.png' 
 
 for year in range(2018, 2025):
     for man_name, models in car_models_by_manufacturer.items():
@@ -130,7 +134,10 @@ for year in range(2018, 2025):
             elif type_name == 'Van':
                 num_seats = 12
             
-            last_id = execute_query(conn, sql, (man_id, model_name, year, num_seats, tow_capacity))
+            # 🟢 FIX APPLIED HERE: Added IMAGE_URL to the tuple of parameters
+            last_id = execute_query(conn, sql, (
+                man_id, model_name, year, num_seats, tow_capacity, IMAGE_URL 
+            ))
             
             if last_id:
                 CAR_MODELS_LIST.append({
@@ -138,12 +145,13 @@ for year in range(2018, 2025):
                     'manufacturerId': man_id,
                     'model_name': model_name,
                     'type_name': type_name, 
-                    'typeId': CAR_TYPES_MAP[type_name], # Store typeId for Car table generation
+                    'typeId': CAR_TYPES_MAP[type_name],
                     'num_seats': num_seats,
-                    'tow_capacity_kg': tow_capacity
+                    'tow_capacity_kg': tow_capacity,
+                    # Storing the URL in the list for consistency, though not strictly needed later
+                    'primary_image_url': IMAGE_URL 
                 })
-print(f"   Generated {len(CAR_MODELS_LIST)} distinct car models.")
-
+print(f"   Generated {len(CAR_MODELS_LIST)} distinct car models.")
 
 # 4. RentalRates (NEW: Linked to ModelId)
 print("4. Populating RentalRates (by Model)...")
@@ -201,7 +209,6 @@ for i in range(70):
 # 6. Cars (100 Records)
 print("6. Populating 100 Cars...")
 cars_sql = "INSERT INTO Cars (VIN, plate_number, manufacturerId, modelId, typeId, colour, is_available) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-car_images_sql = "INSERT INTO CarImages (VIN, file_path, is_main_photo, caption) VALUES (%s, %s, %s, %s)"
 
 for i in range(100):
     vin = generate_vin()
@@ -221,14 +228,7 @@ for i in range(100):
         vin, plate, man_id, model_id, type_id, color, is_available
     ))
     
-    # CarImages (3 per car, 1 main)
-    for img_index in range(1, 4):
-        is_main = (img_index == 1)
-        file_path = f"/cars/images/{vin}_{img_index}.jpg"
-        caption = f"{model_data['model_name']} - {['Front', 'Side', 'Interior'][img_index-1]}"
-        execute_query(conn, car_images_sql, (vin, file_path, is_main, caption))
-
-
+   
 # 7. Rentals (100 Records - NEW Rate Lookup)
 print("7. Populating 100 Rentals...")
 rental_sql = "INSERT INTO Rentals (userId, VIN, start_date, end_date, return_date, daily_rate_used, expected_total_cost, deposit_amount, total_paid, payment_method, rental_status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
