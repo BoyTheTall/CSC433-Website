@@ -288,5 +288,5 @@ for i in range(100):
         payment_method, status
     ))
 
-print("\nPython database population complete! Data is consistent with DDL. 🎉")
+print("\nPython database population complete!")
 conn.close()

@@ -598,7 +598,7 @@ require_once "classes.php";
         $param_types = "isssdds";
 
         $operation_success = $this->execute_data_manipulation_query($sql, $param_types, $params);
-        return $operation_success;
+        return ["operation_success" => $operation_success, "rental_id"=>$this->get_last_insert_id()];
     }
 }
 ?>

@@ -306,7 +306,7 @@
             'rentalStatus' => $this->rentalStatus,
         ];
 
-        // 💡 Key Step: Handle the Nullable returnDate
+
         // We only include 'returnDate' in the JSON if it is NOT null.
         if ($this->returnDate !== null) {
             $data['returnDate'] = $this->returnDate->format(DateTime::ATOM);

@@ -27,14 +27,9 @@ $total_cost = $data['total_cost'];   // Cost calculated by JS
 $daily_rate = $data['daily_rate'];
 $car_vin = $data['VIN'];
 
-// --- 4. Perform Server-Side Validation (CRITICAL STEP) ---
-// You MUST check:
-// a) Are the dates valid and available in the database?
-// b) Is the $total_cost correct for the number of days? (Security check!)
-// c) Do the $car_id and $user_id exist?
 
 //this is the rental function
-$db_conn->rent_car($user_id, $VIN, $start_date, $end_date, $daily_rate, $total_cost);
+$results = $db_conn->rent_car($user_id, $VIN, $start_date, $end_date, $daily_rate, $total_cost);
 
 
 // --- 6. Send the Response Back to JavaScript ---
@@ -42,8 +37,8 @@ $db_conn->rent_car($user_id, $VIN, $start_date, $end_date, $daily_rate, $total_c
 $response = [
     'status' => 'success',
     'message' => 'Car booked successfully.',
-    'booking_id' => '12345' // Replace with the actual ID from the database
-];
+    'booking_id' => $results["rental_id"] 
+    ];
 http_response_code(200); // OK
 echo json_encode($response);
 exit;

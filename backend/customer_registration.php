@@ -36,7 +36,7 @@
             setcookie("username", $username, time() + (86400 * 30), "/");
             
             // Redirect to the main search page
-            $main_page_url = "../vehicle_search_page.php"; // <--- REDIRECT TARGET
+            $main_page_url = "../vehicle_search_page.php"; // REDIRECT TARGET
             header('Location: ' . $main_page_url);
             exit;
             

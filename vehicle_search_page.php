@@ -3,7 +3,7 @@
     require_once __DIR__."/backend/classes.php";
     require_once __DIR__."/backend/database_operation.php";
 
-    // NEW HELPER FUNCTION TO PRE-SELECT DROPDOWNS BASED ON URL PARAMETERS ($_GET)
+    
     function is_selected($param_name, $option_value) {
         // We cast to string for safe comparison, as $_GET values are always strings.
         if (isset($_GET[$param_name]) && (string)$_GET[$param_name] === (string)$option_value) {
